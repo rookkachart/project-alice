@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Alice — Trading HQ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&family=Rajdhani:wght@400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0a1a;
+    --bg2: #0f0f2e;
+    --panel: #111133;
+    --panel2: #0d0d22;
+    --border: #2a2a6e;
+    --border2: #4a4aae;
+    --gold: #f0c040;
+    --gold2: #ffd700;
+    --green: #00ff88;
+    --green2: #00cc66;
+    --red: #ff3366;
+    --red2: #cc2244;
+    --blue: #4488ff;
+    --purple: #aa44ff;
+    --cyan: #00ddff;
+    --white: #e0e0ff;
+    --gray: #6666aa;
+    --pixel: 'Press Start 2P', monospace;
+    --vt: 'VT323', monospace;
+    --ui: 'Rajdhani', sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: var(--ui);
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* Scanlines */
+  body::before {
+    content:'';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,30,0.15) 2px, rgba(0,0,30,0.15) 4px);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* CRT glow effect */
+  body::after {
+    content:'';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,20,0.8) 100%);
+    pointer-events: none;
+    z-index: 998;
+  }
+
+  /* ========== TOP BAR ========== */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: var(--panel2);
+    border-bottom: 2px solid var(--gold);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-logo {
+    font-family: var(--pixel);
+    font-size: 9px;
+    color: var(--gold);
+    text-shadow: 0 0 10px var(--gold);
+    letter-spacing: 1px;
+  }
+
+  .topbar-logo span { color: var(--cyan); }
+
+  .topbar-nav {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nav-btn {
+    font-family: var(--pixel);
+    font-size: 6px;
+    padding: 4px 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--gray);
+    cursor: pointer;
+    transition: all 0.1s;
+    letter-spacing: 0.5px;
+  }
+
+  .nav-btn:hover, .nav-btn.active {
+    background: var(--gold);
+    color: var(--bg);
+    border-color: var(--gold);
+    box-shadow: 0 0 8px var(--gold);
+  }
+
+  .topbar-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--pixel);
+    font-size: 6px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: blink 1.5s infinite;
+  }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .time-display {
+    color: var(--cyan);
+    font-family: var(--pixel);
+    font-size: 7px;
+  }
+
+  /* ========== MAIN LAYOUT ========== */
+  .main {
+    display: grid;
+    grid-template-columns: 220px 1fr 200px;
+    grid-template-rows: auto 1fr auto;
+    gap: 6px;
+    padding: 6px;
+    min-height: calc(100vh - 36px);
+  }
+
+  /* ========== PANELS ========== */
+  .panel {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content:'';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--border2), transparent);
+  }
+
+  .panel-title {
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--gold);
+    padding: 6px 8px;
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .panel-title .dot {
+    width: 6px; height: 6px;
+    background: var(--gold);
+    box-shadow: 0 0 4px var(--gold);
+  }
+
+  .panel-body { padding: 8px; }
+
+  /* ========== LEFT COLUMN ========== */
+  .left-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    grid-row: span 2;
+  }
+
+  /* Balance Panel */
+  .balance-val {
+    font-family: var(--pixel);
+    font-size: 14px;
+    color: var(--green);
+    text-shadow: 0 0 15px var(--green);
+    text-align: center;
+    padding: 8px 0;
+    animation: glow 2s infinite;
+  }
+
+  @keyframes glow {
+    0%,100% { text-shadow: 0 0 10px var(--green); }
+    50% { text-shadow: 0 0 25px var(--green), 0 0 40px var(--green2); }
+  }
+
+  .balance-sub {
+    font-family: var(--vt);
+    font-size: 16px;
+    color: var(--gray);
+    text-align: center;
+    margin-top: 2px;
+  }
+
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--vt);
+    font-size: 16px;
+  }
+
+  .stat-label { color: var(--gray); }
+  .stat-val { color: var(--white); font-weight: bold; }
+  .stat-val.green { color: var(--green); }
+  .stat-val.red { color: var(--red); }
+  .stat-val.gold { color: var(--gold); }
+  .stat-val.cyan { color: var(--cyan); }
+
+  /* ========== PIXEL ART SCENE ========== */
+  .scene-panel {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    min-height: 380px;
+    position: relative;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    overflow: hidden;
+  }
+
+  .scene-canvas {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+
+  /* Office background */
+  .office-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, #0a0520 0%, #120830 40%, #1a0a3a 60%, #2a1050 100%);
+  }
+
+  /* Floor */
+  .floor {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 80px;
+    background: repeating-linear-gradient(90deg,
+      #1a1040 0px, #1a1040 16px,
+      #150d38 16px, #150d38 32px
+    );
+    border-top: 3px solid #3a2080;
+  }
+
+  /* Stars */
+  .stars {
+    position: absolute;
+    inset: 0;
+  }
+
+  .star {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: white;
+    animation: twinkle var(--d, 2s) infinite;
+  }
+
+  @keyframes twinkle { 0%,100%{opacity:1} 50%{opacity:0.1} }
+
+  /* Window */
+  .window {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    width: 120px;
+    height: 90px;
+    background: linear-gradient(180deg, #1a3a6a 0%, #0a1a3a 50%, #0a2040 100%);
+    border: 3px solid #4a6aaa;
+    image-rendering: pixelated;
+  }
+
+  .window::before {
+    content:'';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(rgba(100,150,255,0.1) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 80%, rgba(100,200,255,0.2) 0%, transparent 60%);
+  }
+
+  .window-city {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    height: 50px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 0 4px;
+  }
+
+  .building {
+    background: #0a0a20;
+    border-top: 2px solid #2a2a60;
+    flex-shrink: 0;
+  }
+
+  .building .light {
+    width: 3px; height: 3px;
+    background: var(--gold);
+    margin: 2px auto;
+    animation: blink var(--d, 1s) infinite;
+  }
+
+  /* Sign */
+  .sign {
+    position: absolute;
+    top: 30px;
+    left: 20px;
+    background: var(--panel2);
+    border: 2px solid var(--purple);
+    padding: 6px 10px;
+    box-shadow: 0 0 15px var(--purple);
+  }
+
+  .sign-text {
+    font-family: var(--pixel);
+    font-size: 7px;
+    line-height: 1.8;
+    color: var(--cyan);
+    text-shadow: 0 0 5px var(--cyan);
+  }
+
+  /* Desks */
+  .desk {
+    position: absolute;
+    bottom: 75px;
+    width: 60px;
+    height: 20px;
+    background: #3a2060;
+    border: 2px solid #5a3a90;
+    border-bottom: 4px solid #2a1040;
+  }
+
+  .desk-screen {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 18px;
+    background: var(--bg);
+    border: 2px solid #4a6aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .screen-content {
+    font-family: var(--pixel);
+    font-size: 3px;
+    color: var(--green);
+    animation: scroll-text 4s linear infinite;
+    white-space: nowrap;
+  }
+
+  @keyframes scroll-text { 0%{transform:translateX(30px)} 100%{transform:translateX(-60px)} }
+
+  /* Characters */
+  .character {
+    position: absolute;
+    bottom: 88px;
+    width: 20px;
+    height: 32px;
+    image-rendering: pixelated;
+  }
+
+  /* Pixel character using CSS */
+  .char-body {
+    width: 20px;
+    height: 32px;
+    position: relative;
+    animation: idle var(--idle, 2s) steps(1) infinite;
+  }
+
+  @keyframes idle { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+
+  /* Simple pixel human shapes */
+  .pixel-char {
+    image-rendering: pixelated;
+    position: absolute;
+    bottom: 80px;
+  }
+
+  /* Alice character */
+  .alice-char {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 90px;
+    position: absolute;
+    animation: alice-idle 1.5s steps(2) infinite;
+  }
+
+  @keyframes alice-idle {
+    0%{transform:translateX(-50%) translateY(0)}
+    100%{transform:translateX(-50%) translateY(-3px)}
+  }
+
+  /* Robot */
+  .robot-char {
+    position: absolute;
+    right: 80px;
+    bottom: 82px;
+    animation: robot-blink 3s steps(1) infinite;
+  }
+
+  @keyframes robot-blink { 0%,90%,100%{opacity:1} 95%{opacity:0.5} }
+
+  /* ========== PRICE TICKER ========== */
+  .ticker {
+    overflow: hidden;
+    background: var(--panel2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 4px 0;
+  }
+
+  .ticker-inner {
+    display: flex;
+    gap: 32px;
+    animation: ticker-scroll 20s linear infinite;
+    white-space: nowrap;
+  }
+
+  @keyframes ticker-scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+  .tick-item {
+    display: flex;
+    gap: 8px;
+    font-family: var(--vt);
+    font-size: 18px;
+    align-items: center;
+  }
+
+  .tick-pair { color: var(--gold); font-weight: bold; }
+  .tick-price { color: var(--white); }
+  .tick-change.up { color: var(--green); }
+  .tick-change.dn { color: var(--red); }
+
+  /* ========== AGENTS PANEL ========== */
+  .agent-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .agent-avatar {
+    width: 28px; height: 28px;
+    background: var(--panel2);
+    border: 2px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .agent-avatar::after {
+    content:'';
+    position: absolute;
+    bottom: -1px; right: -1px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    border: 1px solid var(--bg);
+    box-shadow: 0 0 4px var(--green);
+  }
+
+  .agent-info { flex: 1; }
+
+  .agent-name {
+    font-family: var(--pixel);
+    font-size: 6px;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+
+  .agent-task {
+    font-family: var(--vt);
+    font-size: 13px;
+    color: var(--gray);
+  }
+
+  .agent-status {
+    font-family: var(--pixel);
+    font-size: 5px;
+    padding: 2px 4px;
+    background: rgba(0,255,136,0.15);
+    color: var(--green);
+    border: 1px solid var(--green);
+  }
+
+  /* ========== RIGHT COLUMN ========== */
+  .right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    grid-row: span 2;
+  }
+
+  /* Price cards */
+  .price-card {
+    padding: 8px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+
+  .price-pair {
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .price-value {
+    font-family: var(--pixel);
+    font-size: 11px;
+    color: var(--white);
+    text-shadow: 0 0 8px var(--white);
+  }
+
+  .price-change {
+    font-family: var(--vt);
+    font-size: 16px;
+    margin-top: 2px;
+  }
+
+  /* Mini chart */
+  .mini-chart {
+    height: 32px;
+    margin-top: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chart-line {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 100%;
+  }
+
+  /* Open positions */
+  .no-pos {
+    font-family: var(--vt);
+    font-size: 16px;
+    color: var(--gray);
+    text-align: center;
+    padding: 8px;
+  }
+
+  .pos-item {
+    background: var(--panel2);
+    border-left: 3px solid var(--green);
+    padding: 6px;
+    margin-bottom: 4px;
+    font-family: var(--vt);
+    font-size: 15px;
+  }
+
+  .pos-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2px;
+  }
+
+  .pos-pair { color: var(--gold); font-weight: bold; font-size: 17px; }
+  .pos-dir { color: var(--green); font-size: 16px; }
+  .pos-pnl { color: var(--green); font-size: 16px; }
+
+  /* ========== BOTTOM SECTION ========== */
+  .bottom-section {
+    grid-column: 1 / 4;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+  }
+
+  /* Trade history */
+  .trade-row {
+    display: grid;
+    grid-template-columns: 80px 60px 50px 60px 70px;
+    gap: 4px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--vt);
+    font-size: 15px;
+    align-items: center;
+  }
+
+  .trade-row.header {
+    font-family: var(--pixel);
+    font-size: 6px;
+    color: var(--gold);
+    border-bottom: 2px solid var(--border2);
+  }
+
+  /* Chat */
+  .chat-msg {
+    display: flex;
+    gap: 6px;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--vt);
+    font-size: 15px;
+  }
+
+  .chat-sender {
+    color: var(--purple);
+    white-space: nowrap;
+    font-size: 14px;
+    min-width: 50px;
+  }
+
+  .chat-sender.alice { color: var(--cyan); }
+  .chat-text { color: var(--white); }
+
+  .chat-input-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .chat-input {
+    flex: 1;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    color: var(--white);
+    padding: 4px 8px;
+    font-family: var(--vt);
+    font-size: 15px;
+    outline: none;
+  }
+
+  .chat-input:focus { border-color: var(--cyan); }
+
+  .chat-send {
+    font-family: var(--pixel);
+    font-size: 6px;
+    padding: 4px 8px;
+    background: var(--cyan);
+    color: var(--bg);
+    border: none;
+    cursor: pointer;
+  }
+
+  .chat-send:hover { background: var(--blue); color: white; }
+
+  /* WinRate bar */
+  .wr-bar-bg {
+    height: 8px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    margin: 4px 0;
+    overflow: hidden;
+  }
+
+  .wr-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green2), var(--green));
+    box-shadow: 0 0 8px var(--green);
+    transition: width 1s ease;
+  }
+
+  /* Day badge */
+  .day-badge {
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--bg);
+    background: var(--gold);
+    padding: 3px 8px;
+    display: inline-block;
+    box-shadow: 0 0 10px var(--gold);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .main {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto;
+    }
+    .scene-panel { grid-column: 1 / 3; grid-row: 1; min-height: 250px; }
+    .left-col { grid-row: 2; }
+    .right-col { grid-row: 2; }
+    .bottom-section { grid-column: 1 / 3; grid-template-columns: 1fr; }
+    .topbar-nav { display: none; }
+  }
+
+  /* Pixel art elements via CSS */
+  .pixel-alice {
+    font-size: 28px;
+    line-height: 1;
+    filter: drop-shadow(0 0 6px var(--cyan));
+  }
+
+  .pixel-robot {
+    font-size: 24px;
+    line-height: 1;
+    filter: drop-shadow(0 0 6px var(--purple));
+  }
+
+  .pixel-trader {
+    font-size: 24px;
+    line-height: 1;
+    filter: drop-shadow(0 0 4px var(--gold));
+  }
+
+  /* Floating particles */
+  .particle {
+    position: absolute;
+    width: 3px; height: 3px;
+    background: var(--gold);
+    animation: float-up var(--d, 3s) linear infinite;
+    opacity: 0;
+  }
+
+  @keyframes float-up {
+    0% { transform: translateY(0) translateX(0); opacity: 1; }
+    100% { transform: translateY(-60px) translateX(var(--x, 10px)); opacity: 0; }
+  }
+
+  .scene-label {
+    position: absolute;
+    top: 8px; left: 8px;
+    font-family: var(--pixel);
+    font-size: 8px;
+    color: var(--gold);
+    text-shadow: 0 0 8px var(--gold);
+    letter-spacing: 1px;
+  }
+
+  .scene-day {
+    position: absolute;
+    top: 8px; right: 8px;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">⚡ PROJECT <span>ALICE</span></div>
+  <div class="topbar-nav">
+    <div class="nav-btn active">DASHBOARD</div>
+    <div class="nav-btn">TRADES</div>
+    <div class="nav-btn">AGENTS</div>
+    <div class="nav-btn">ANALYTICS</div>
+    <div class="nav-btn">SETTINGS</div>
+  </div>
+  <div class="topbar-status">
+    <div class="status-dot"></div>
+    <span style="color:var(--green)">LIVE</span>
+    <div class="time-display" id="clock">--:--:--</div>
+  </div>
+</div>
+
+<!-- TICKER — TradingView Live -->
+<div style="background:var(--panel2);border-bottom:1px solid var(--border)">
+  <div class="tradingview-widget-container">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+    {
+      "symbols": [
+        {"proName": "OANDA:XAUUSD", "title": "Gold"},
+        {"proName": "BITSTAMP:BTCUSD", "title": "Bitcoin"},
+        {"proName": "TVC:DXY", "title": "DXY"},
+        {"proName": "FX:EURUSD", "title": "EUR/USD"},
+        {"proName": "TVC:US10Y", "title": "US 10Y"},
+        {"proName": "OANDA:GBPUSD", "title": "GBP/USD"},
+        {"proName": "CAPITALCOM:OIL_CRUDE", "title": "Crude Oil"}
+      ],
+      "showSymbolLogo": false,
+      "colorTheme": "dark",
+      "isTransparent": true,
+      "displayMode": "compact",
+      "locale": "en"
+    }
+    </script>
+  </div>
+</div>
+
+<!-- MAIN GRID -->
+<div class="main">
+
+  <!-- LEFT COL -->
+  <div class="left-col">
+
+    <!-- Balance -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>BALANCE</div>
+      <div class="panel-body">
+        <div class="balance-val">$400.00</div>
+        <div class="balance-sub">Starting Capital</div>
+        <div style="height:6px"></div>
+        <div class="stat-row"><span class="stat-label">P&L Today</span><span class="stat-val green">+$0.00</span></div>
+        <div class="stat-row"><span class="stat-label">P&L Total</span><span class="stat-val green">+$0.00</span></div>
+        <div class="stat-row"><span class="stat-label">Risk/Trade</span><span class="stat-val gold">$8.00</span></div>
+        <div class="stat-row"><span class="stat-label">Drawdown</span><span class="stat-val">0.00%</span></div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>PERFORMANCE</div>
+      <div class="panel-body">
+        <div class="stat-row"><span class="stat-label">Total Trades</span><span class="stat-val">0</span></div>
+        <div class="stat-row"><span class="stat-label">Wins</span><span class="stat-val green">0</span></div>
+        <div class="stat-row"><span class="stat-label">Losses</span><span class="stat-val red">0</span></div>
+        <div class="stat-row"><span class="stat-label">Win Rate</span><span class="stat-val cyan">0.0%</span></div>
+        <div style="margin-top:6px">
+          <div style="font-family:var(--pixel);font-size:6px;color:var(--gray);margin-bottom:3px">WIN RATE</div>
+          <div class="wr-bar-bg"><div class="wr-bar" style="width:0%"></div></div>
+        </div>
+        <div class="stat-row" style="margin-top:4px"><span class="stat-label">Profit Factor</span><span class="stat-val gold">—</span></div>
+        <div class="stat-row"><span class="stat-label">Avg RR</span><span class="stat-val gold">—</span></div>
+        <div class="stat-row"><span class="stat-label">Best Trade</span><span class="stat-val green">—</span></div>
+      </div>
+    </div>
+
+    <!-- Risk Rules -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>ALICE RULES</div>
+      <div class="panel-body">
+        <div style="font-family:var(--vt);font-size:14px;line-height:1.8;color:var(--gray)">
+          <div>✅ <span style="color:var(--green)">Risk 2% per trade</span></div>
+          <div>✅ <span style="color:var(--green)">RR min 1:1.5</span></div>
+          <div>✅ <span style="color:var(--green)">Max 1 trade/pair</span></div>
+          <div>❌ <span style="color:var(--red)">No revenge trade</span></div>
+          <div>❌ <span style="color:var(--red)">No SL movement</span></div>
+          <div>⚠️ <span style="color:var(--gold)">Skip NFP/CPI/FOMC</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CENTER: PIXEL ART SCENE -->
+  <div class="scene-panel">
+    <div class="panel-title"><div class="dot"></div>PROJECT ALICE — TRADING HQ</div>
+    <div class="scene-canvas" style="height:calc(100% - 28px)">
+
+      <!-- Background -->
+      <div class="office-bg"></div>
+
+      <!-- Stars -->
+      <div class="stars" id="stars"></div>
+
+      <!-- Window -->
+      <div class="window" style="right:20px;top:35px">
+        <div class="window-city">
+          <div class="building" style="width:12px;height:30px"><div class="light" style="--d:0.8s"></div></div>
+          <div class="building" style="width:8px;height:20px"></div>
+          <div class="building" style="width:14px;height:38px"><div class="light" style="--d:1.2s"></div><div class="light" style="--d:1.8s"></div></div>
+          <div class="building" style="width:10px;height:25px"><div class="light" style="--d:2s"></div></div>
+          <div class="building" style="width:8px;height:15px"></div>
+          <div class="building" style="width:12px;height:32px"><div class="light" style="--d:0.6s"></div></div>
+        </div>
+      </div>
+
+      <!-- Sign -->
+      <div class="sign" style="left:15px;top:40px">
+        <div class="sign-text">PROJECT<br>ALICE<br>TRADING</div>
+      </div>
+
+      <!-- Floor -->
+      <div class="floor"></div>
+
+      <!-- Desk 1 -->
+      <div class="desk" style="left:15%">
+        <div class="desk-screen">
+          <div class="screen-content">XAUUSD 2334.50▲</div>
+        </div>
+      </div>
+
+      <!-- Desk 2 -->
+      <div class="desk" style="left:38%">
+        <div class="desk-screen">
+          <div class="screen-content">BTC 67420▲ +1.28%</div>
+        </div>
+      </div>
+
+      <!-- Desk 3 -->
+      <div class="desk" style="left:60%">
+        <div class="desk-screen">
+          <div class="screen-content">P&L: $0.00 WR:0%</div>
+        </div>
+      </div>
+
+      <!-- Alice Character (center) -->
+      <div class="alice-char">
+        <div class="pixel-alice">👩‍💼</div>
+        <div style="font-family:var(--pixel);font-size:5px;color:var(--cyan);text-align:center;margin-top:2px;text-shadow:0 0 5px var(--cyan)">ALICE</div>
+      </div>
+
+      <!-- Trader left -->
+      <div style="position:absolute;bottom:82px;left:12%;animation:idle 2.2s steps(2) infinite;">
+        <div class="pixel-trader">🧑‍💻</div>
+        <div style="font-family:var(--pixel);font-size:4px;color:var(--gold);text-align:center;margin-top:2px">NEWS</div>
+      </div>
+
+      <!-- Trader right -->
+      <div style="position:absolute;bottom:82px;left:35%;animation:idle 1.8s steps(2) infinite;animation-delay:0.5s">
+        <div class="pixel-trader">👨‍💻</div>
+        <div style="font-family:var(--pixel);font-size:4px;color:var(--gold);text-align:center;margin-top:2px">P&L</div>
+      </div>
+
+      <!-- Robot -->
+      <div class="robot-char">
+        <div class="pixel-robot">🤖</div>
+        <div style="font-family:var(--pixel);font-size:4px;color:var(--purple);text-align:center;margin-top:2px">BOT</div>
+      </div>
+
+      <!-- Particles -->
+      <div class="particle" style="left:20%;bottom:80px;--d:2s;--x:5px"></div>
+      <div class="particle" style="left:50%;bottom:80px;--d:3s;--x:-8px;animation-delay:1s"></div>
+      <div class="particle" style="left:70%;bottom:80px;--d:2.5s;--x:10px;animation-delay:0.5s"></div>
+
+      <!-- Scene label -->
+      <div class="scene-label">⚡ ALICE HQ</div>
+      <div class="scene-day"><div class="day-badge">DAY 1</div></div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT COL -->
+  <div class="right-col">
+
+    <!-- Prices -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>LIVE PRICES</div>
+      <div class="panel-body" style="padding:4px">
+
+        <!-- XAUUSD TradingView Widget -->
+        <div class="price-pair" style="padding:4px 4px 2px;font-family:var(--pixel);font-size:7px;color:var(--gold)">⚡ XAUUSD</div>
+        <div style="border:1px solid var(--border);overflow:hidden;margin-bottom:6px">
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js" async>
+            {
+              "symbol": "OANDA:XAUUSD",
+              "width": "100%",
+              "colorTheme": "dark",
+              "isTransparent": true,
+              "locale": "en"
+            }
+            </script>
+          </div>
+        </div>
+
+        <!-- XAUUSD Mini Chart -->
+        <div style="border:1px solid var(--border);overflow:hidden;margin-bottom:8px;height:120px">
+          <div class="tradingview-widget-container" style="height:120px">
+            <div class="tradingview-widget-container__widget" style="height:120px"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+            {
+              "symbol": "OANDA:XAUUSD",
+              "width": "100%",
+              "height": 120,
+              "locale": "en",
+              "dateRange": "1D",
+              "colorTheme": "dark",
+              "isTransparent": true,
+              "autosize": false,
+              "largeChartUrl": ""
+            }
+            </script>
+          </div>
+        </div>
+
+        <!-- BTCUSD TradingView Widget -->
+        <div class="price-pair" style="padding:4px 4px 2px;font-family:var(--pixel);font-size:7px;color:var(--gold)">₿ BTCUSD</div>
+        <div style="border:1px solid var(--border);overflow:hidden;margin-bottom:6px">
+          <div class="tradingview-widget-container">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-single-quote.js" async>
+            {
+              "symbol": "BITSTAMP:BTCUSD",
+              "width": "100%",
+              "colorTheme": "dark",
+              "isTransparent": true,
+              "locale": "en"
+            }
+            </script>
+          </div>
+        </div>
+
+        <!-- BTCUSD Mini Chart -->
+        <div style="border:1px solid var(--border);overflow:hidden;height:120px">
+          <div class="tradingview-widget-container" style="height:120px">
+            <div class="tradingview-widget-container__widget" style="height:120px"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+            {
+              "symbol": "BITSTAMP:BTCUSD",
+              "width": "100%",
+              "height": 120,
+              "locale": "en",
+              "dateRange": "1D",
+              "colorTheme": "dark",
+              "isTransparent": true,
+              "autosize": false,
+              "largeChartUrl": ""
+            }
+            </script>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Open Positions -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>OPEN POSITIONS</div>
+      <div class="panel-body">
+        <div class="no-pos">— no open positions —</div>
+        <div style="font-family:var(--vt);font-size:14px;color:var(--gray);text-align:center;margin-top:4px">waiting for signal...</div>
+      </div>
+    </div>
+
+    <!-- AI Agents -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>AI AGENTS</div>
+      <div class="panel-body">
+        <div class="agent-item">
+          <div class="agent-avatar">👩‍💼</div>
+          <div class="agent-info">
+            <div class="agent-name">ALICE</div>
+            <div class="agent-task">Head of Trading</div>
+          </div>
+          <div class="agent-status">ONLINE</div>
+        </div>
+        <div class="agent-item">
+          <div class="agent-avatar" style="border-color:var(--gold)">📰</div>
+          <div class="agent-info">
+            <div class="agent-name">NEWS BOT</div>
+            <div class="agent-task">Market Intelligence</div>
+          </div>
+          <div class="agent-status">READY</div>
+        </div>
+        <div class="agent-item">
+          <div class="agent-avatar" style="border-color:var(--purple)">🤖</div>
+          <div class="agent-info">
+            <div class="agent-name">RISK MGR</div>
+            <div class="agent-task">Portfolio Guard</div>
+          </div>
+          <div class="agent-status">ONLINE</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM SECTION -->
+  <div class="bottom-section">
+
+    <!-- Trade History -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>TRADE HISTORY</div>
+      <div class="panel-body">
+        <div class="trade-row header">
+          <span>DATE</span><span>PAIR</span><span>DIR</span><span>P&L</span><span>RESULT</span>
+        </div>
+        <div style="font-family:var(--vt);font-size:15px;color:var(--gray);text-align:center;padding:12px 0">
+          — no trades yet —<br>
+          <span style="font-size:13px">Start trading tonight at 8PM</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alice Chat -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>ALICE CHAT</div>
+      <div class="panel-body">
+        <div class="chat-msg">
+          <span class="chat-sender alice">ALICE:</span>
+          <span class="chat-text">System online. Ready for tonight's session at 20:00 🎯</span>
+        </div>
+        <div class="chat-msg">
+          <span class="chat-sender alice">ALICE:</span>
+          <span class="chat-text">Remember: Check H4 → H1 → M15 before entry.</span>
+        </div>
+        <div class="chat-msg">
+          <span class="chat-sender alice">ALICE:</span>
+          <span class="chat-text">Risk 2% only. Let the system work. 💪</span>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" placeholder="Ask Alice..." id="chatInput"/>
+          <button class="chat-send" onclick="sendChat()">SEND</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Status -->
+    <div class="panel">
+      <div class="panel-title"><div class="dot"></div>SESSION STATUS</div>
+      <div class="panel-body">
+        <div class="stat-row"><span class="stat-label">Asian Session</span><span class="stat-val gray">CLOSED</span></div>
+        <div class="stat-row"><span class="stat-label">London Session</span><span class="stat-val gray">CLOSED</span></div>
+        <div class="stat-row"><span class="stat-label">NY Session</span><span class="stat-val green">OPEN ●</span></div>
+        <div style="height:8px"></div>
+        <div class="stat-row"><span class="stat-label">Next Signal</span><span class="stat-val gold">20:00 TH</span></div>
+        <div class="stat-row"><span class="stat-label">High Impact</span><span class="stat-val red">None Today</span></div>
+        <div style="height:8px"></div>
+        <div style="font-family:var(--pixel);font-size:6px;color:var(--gray);line-height:2">
+          <div style="color:var(--green)">▶ XAUUSD — WATCHLIST</div>
+          <div style="color:var(--gray)">▶ BTCUSD — MONITOR</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Clock
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Stars
+const starsEl = document.getElementById('stars');
+for(let i=0;i<40;i++){
+  const s = document.createElement('div');
+  s.className='star';
+  s.style.left = Math.random()*100+'%';
+  s.style.top = Math.random()*60+'%';
+  s.style.setProperty('--d', (Math.random()*2+1)+'s');
+  starsEl.appendChild(s);
+}
+
+// Chat
+function sendChat(){
+  const input = document.getElementById('chatInput');
+  const val = input.value.trim();
+  if(!val) return;
+  const chatBody = document.querySelector('.chat-msg').parentElement;
+  const userMsg = document.createElement('div');
+  userMsg.className = 'chat-msg';
+  userMsg.innerHTML = `<span class="chat-sender" style="color:var(--gold)">YOU:</span><span class="chat-text">${val}</span>`;
+  chatBody.insertBefore(userMsg, chatBody.lastElementChild);
+  input.value = '';
+  setTimeout(()=>{
+    const aliceMsg = document.createElement('div');
+    aliceMsg.className = 'chat-msg';
+    const replies = [
+      "วิเคราะห์ H4 ก่อนเลยนะคะ EMA เรียงตัวยังไง?",
+      "Risk 2% เท่านั้นนะคะ อย่าโลภ 😊",
+      "ถ้า RR ต่ำกว่า 1.5 เราข้ามไปก่อนค่ะ",
+      "เช็ค Liquidity Sweep ใน H1 ด้วยนะคะ",
+      "ตลาดกำลัง Trending ค่ะ ระวัง Fake Breakout"
+    ];
+    aliceMsg.innerHTML = `<span class="chat-sender alice">ALICE:</span><span class="chat-text">${replies[Math.floor(Math.random()*replies.length)]}</span>`;
+    chatBody.insertBefore(aliceMsg, chatBody.lastElementChild);
+  }, 800);
+}
+
+document.getElementById('chatInput').addEventListener('keypress', e=>{
+  if(e.key==='Enter') sendChat();
+});
+
+// Nav buttons
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
